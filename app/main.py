@@ -1,1 +1,59 @@
-print("Enterprise AI Knowledge Assistant")
+import streamlit as st
+from pathlib import Path
+
+from services.parser import parse_document
+
+
+DOCUMENT_FOLDER = Path("data/documents")
+ALLOWED_EXTENSIONS = ["pdf", "docx", "txt"]
+
+
+st.set_page_config(
+    page_title="Enterprise AI Knowledge Assistant",
+    page_icon="📄"
+)
+
+st.title("Enterprise AI Knowledge Assistant")
+
+st.write("Upload a PDF, DOCX, or TXT document.")
+
+
+uploaded_file = st.file_uploader(
+    "Choose a document",
+    type=ALLOWED_EXTENSIONS
+)
+
+
+if uploaded_file is not None:
+
+    file_path = DOCUMENT_FOLDER / uploaded_file.name
+
+    DOCUMENT_FOLDER.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    with open(file_path, "wb") as file:
+        file.write(uploaded_file.getbuffer())
+
+    st.success(f"Uploaded: {uploaded_file.name}")
+
+    try:
+        text = parse_document(file_path)
+
+        st.subheader("Extracted Text")
+
+        if text.strip():
+            st.text_area(
+                "Document content",
+                text,
+                height=400
+            )
+        else:
+            st.warning("No text could be extracted from this document.")
+
+    except ValueError as error:
+        st.error(str(error))
+
+    except Exception as error:
+        st.error(f"Error processing document: {error}")
