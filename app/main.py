@@ -2,6 +2,7 @@ import streamlit as st
 from pathlib import Path
 
 from services.parser import parse_document
+from services.chunker import chunk_document
 
 
 DOCUMENT_FOLDER = Path("data/documents")
@@ -47,8 +48,29 @@ if uploaded_file is not None:
             st.text_area(
                 "Document content",
                 text,
-                height=400
+                height=500
             )
+
+            chunks = chunk_document(text, uploaded_file.name)
+
+            st.subheader("Document Chunks")
+
+            st.write(f"Total chunks: {len(chunks)}")
+
+            for chunk in chunks:
+
+                st.write(
+                    f"Chunk {chunk['metadata']['chunk_id']} "
+                    f"— {chunk['metadata']['source']}"
+                )
+
+                st.text_area(
+                    "Chunk content",
+                    chunk["text"],
+                    height=150,
+                    key=f"chunk_{chunk['metadata']['chunk_id']}"
+                )
+
         else:
             st.warning("No text could be extracted from this document.")
 
