@@ -3,6 +3,7 @@ from pathlib import Path
 
 from services.parser import parse_document
 from services.chunker import chunk_document
+from services.embedder import embed_chunks
 
 
 DOCUMENT_FOLDER = Path("data/documents")
@@ -52,6 +53,7 @@ if uploaded_file is not None:
             )
 
             chunks = chunk_document(text, uploaded_file.name)
+            embeddings = embed_chunks(chunks)
 
             st.subheader("Document Chunks")
 
@@ -70,6 +72,18 @@ if uploaded_file is not None:
                     height=150,
                     key=f"chunk_{chunk['metadata']['chunk_id']}"
                 )
+
+            st.subheader("Embeddings")
+
+            st.write(f"Total embeddings: {len(embeddings)}")
+
+            if embeddings:
+                st.write(
+                    f"Vector dimensions: {len(embeddings[0])}"
+                )
+
+                st.write("First embedding:")
+                st.write(embeddings[0])
 
         else:
             st.warning("No text could be extracted from this document.")
