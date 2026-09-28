@@ -4,6 +4,7 @@ from pathlib import Path
 from services.parser import parse_document
 from services.chunker import chunk_document
 from services.embedder import embed_chunks
+from services.vector_store import store_chunks
 
 
 DOCUMENT_FOLDER = Path("data/documents")
@@ -54,7 +55,9 @@ if uploaded_file is not None:
 
             chunks = chunk_document(text, uploaded_file.name)
             embeddings = embed_chunks(chunks)
-
+            stored_count = store_chunks(chunks, embeddings)
+            st.success(f"Stored {stored_count} chunks in ChromaDB.")
+            
             st.subheader("Document Chunks")
 
             st.write(f"Total chunks: {len(chunks)}")
