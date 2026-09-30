@@ -5,8 +5,7 @@ from services.parser import parse_document
 from services.chunker import chunk_document
 from services.embedder import embed_chunks
 from services.vector_store import store_chunks, get_collection_count
-from services.retriever import retrieve_documents
-from services.llm import generate_answer
+from services.api_client import ask_question
 
 
 DOCUMENT_FOLDER = Path("data/documents")
@@ -190,27 +189,9 @@ if query:
 
     try:
 
-        # --------------------------------------------------
-        # RETRIEVE RELEVANT DOCUMENTS
-        # --------------------------------------------------
-
-        retrieved_chunks = retrieve_documents(
-            query,
-            top_k=3
-        )
-
-        st.write(
-            f"Retrieved {len(retrieved_chunks)} chunks"
-        )
-
-
-        # --------------------------------------------------
-        # GENERATE LLM ANSWER
-        # --------------------------------------------------
-
-        answer = generate_answer(
-            query,
-            retrieved_chunks
+        # Send question to FastAPI
+        result = ask_question(
+            query
         )
 
 
@@ -221,7 +202,7 @@ if query:
         st.subheader("Answer")
 
         st.write(
-            answer
+            result["answer"]
         )
 
 
@@ -231,16 +212,16 @@ if query:
 
         st.subheader("Sources")
 
-        for chunk in retrieved_chunks:
+        for source in result["sources"]:
 
             st.write(
-                f"{chunk['metadata']['source']} "
-                f"— Chunk {chunk['metadata']['chunk_id']}"
+                f"{source['source']} "
+                f"— Chunk {source['chunk_id']}"
             )
 
 
     except Exception as error:
 
         st.error(
-            f"Error generating answer: {error}"
+            f"Error connecting to the API: {error}"
         )
