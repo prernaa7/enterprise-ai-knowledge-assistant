@@ -6,6 +6,7 @@ from services.chunker import chunk_document
 from services.embedder import embed_chunks
 from services.vector_store import store_chunks, get_collection_count
 from services.retriever import retrieve_documents
+from services.llm import generate_answer
 
 
 DOCUMENT_FOLDER = Path("data/documents")
@@ -27,7 +28,7 @@ st.write(
 
 
 # --------------------------------------------------
-# Document Upload
+# DOCUMENT UPLOAD
 # --------------------------------------------------
 
 st.subheader("Upload Document")
@@ -57,7 +58,7 @@ if uploaded_file is not None:
     try:
 
         # --------------------------------------------------
-        # Step 1: Parse Document
+        # PARSE DOCUMENT
         # --------------------------------------------------
 
         text = parse_document(file_path)
@@ -80,7 +81,7 @@ if uploaded_file is not None:
 
 
         # --------------------------------------------------
-        # Step 2: Chunk Document
+        # CHUNK DOCUMENT
         # --------------------------------------------------
 
         chunks = chunk_document(
@@ -105,12 +106,16 @@ if uploaded_file is not None:
                 "Chunk content",
                 chunk["text"],
                 height=150,
-                key=f"chunk_{uploaded_file.name}_{chunk['metadata']['chunk_id']}"
+                key=(
+                    f"chunk_"
+                    f"{uploaded_file.name}_"
+                    f"{chunk['metadata']['chunk_id']}"
+                )
             )
 
 
         # --------------------------------------------------
-        # Step 3: Create Embeddings
+        # CREATE EMBEDDINGS
         # --------------------------------------------------
 
         embeddings = embed_chunks(chunks)
@@ -135,7 +140,7 @@ if uploaded_file is not None:
 
 
         # --------------------------------------------------
-        # Step 4: Store in ChromaDB
+        # STORE IN CHROMADB
         # --------------------------------------------------
 
         stored_count = store_chunks(
@@ -160,6 +165,7 @@ if uploaded_file is not None:
             str(error)
         )
 
+
     except Exception as error:
 
         st.error(
@@ -168,7 +174,7 @@ if uploaded_file is not None:
 
 
 # --------------------------------------------------
-# Retrieval
+# QUESTION ANSWERING
 # --------------------------------------------------
 
 st.divider()
@@ -182,24 +188,59 @@ query = st.text_input(
 
 if query:
 
-    retrieved_chunks = retrieve_documents(
-        query
-    )
+    try:
 
-    st.write(
-        f"Retrieved {len(retrieved_chunks)} chunks"
-    )
+        # --------------------------------------------------
+        # RETRIEVE RELEVANT DOCUMENTS
+        # --------------------------------------------------
 
-    for chunk in retrieved_chunks:
-
-        st.write(
-            f"Source: {chunk['metadata']['source']} "
-            f"| Chunk: {chunk['metadata']['chunk_id']}"
+        retrieved_chunks = retrieve_documents(
+            query,
+            top_k=3
         )
 
-        st.text_area(
-            "Retrieved content",
-            chunk["text"],
-            height=150,
-            key=f"retrieved_{chunk['metadata']['source']}_{chunk['metadata']['chunk_id']}"
+        st.write(
+            f"Retrieved {len(retrieved_chunks)} chunks"
+        )
+
+
+        # --------------------------------------------------
+        # GENERATE LLM ANSWER
+        # --------------------------------------------------
+
+        answer = generate_answer(
+            query,
+            retrieved_chunks
+        )
+
+
+        # --------------------------------------------------
+        # DISPLAY ANSWER
+        # --------------------------------------------------
+
+        st.subheader("Answer")
+
+        st.write(
+            answer
+        )
+
+
+        # --------------------------------------------------
+        # DISPLAY SOURCES
+        # --------------------------------------------------
+
+        st.subheader("Sources")
+
+        for chunk in retrieved_chunks:
+
+            st.write(
+                f"{chunk['metadata']['source']} "
+                f"— Chunk {chunk['metadata']['chunk_id']}"
+            )
+
+
+    except Exception as error:
+
+        st.error(
+            f"Error generating answer: {error}"
         )
