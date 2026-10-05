@@ -1,5 +1,6 @@
 import streamlit as st
 from pathlib import Path
+import requests
 
 from services.parser import parse_document
 from services.chunker import chunk_document
@@ -158,6 +159,41 @@ if uploaded_file is not None:
         )
 
 
+        # --------------------------------------------------
+        # DOCUMENT SUMMARY
+        # --------------------------------------------------
+
+        st.subheader("Document Summary")
+
+        if st.button(
+            "Generate Summary",
+            key=f"summary_{uploaded_file.name}"
+        ):
+
+            try:
+
+                response = requests.post(
+                    "http://127.0.0.1:8000/summarize",
+                    json={
+                        "text": text
+                    }
+                )
+
+                response.raise_for_status()
+
+                summary_result = response.json()
+
+                st.write(
+                    summary_result["summary"]
+                )
+
+            except Exception as error:
+
+                st.error(
+                    f"Error generating summary: {error}"
+                )
+
+
     except ValueError as error:
 
         st.error(
@@ -173,52 +209,96 @@ if uploaded_file is not None:
 
 
 # --------------------------------------------------
-# QUESTION ANSWERING
+# CHAT
 # --------------------------------------------------
 
 st.divider()
 
-st.subheader("Ask the Knowledge Base")
+if "messages" not in st.session_state:
 
-query = st.text_input(
-    "Enter your question"
+    st.session_state.messages = []
+
+
+# Display previous messages
+
+for message in st.session_state.messages:
+
+    with st.chat_message(message["role"]):
+
+        st.write(
+            message["content"]
+        )
+
+        if message["role"] == "assistant" and "sources" in message:
+
+            st.caption("Sources")
+
+            for source in message["sources"]:
+
+                with st.expander(
+                    f"{source['source']} — "
+                    f"Chunk {source['chunk_id']}"
+                ):
+
+                    st.write(
+                        source["text"]
+                    )
+
+
+# Chat input
+
+query = st.chat_input(
+    "Ask a question about your documents..."
 )
 
 
 if query:
 
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": query
+        }
+    )
+
+    with st.chat_message("user"):
+
+        st.write(
+            query
+        )
+
     try:
 
-        # Send question to FastAPI
         result = ask_question(
             query
         )
 
-
-        # --------------------------------------------------
-        # DISPLAY ANSWER
-        # --------------------------------------------------
-
-        st.subheader("Answer")
-
-        st.write(
-            result["answer"]
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": result["answer"],
+                "sources": result["sources"]
+            }
         )
 
-
-        # --------------------------------------------------
-        # DISPLAY SOURCES
-        # --------------------------------------------------
-
-        st.subheader("Sources")
-
-        for source in result["sources"]:
+        with st.chat_message("assistant"):
 
             st.write(
-                f"{source['source']} "
-                f"— Chunk {source['chunk_id']}"
+                result["answer"]
             )
 
+            st.caption("Sources")
+
+            for source in result["sources"]:
+
+                with st.expander(
+                    f"{source['source']} — "
+                    f"Chunk {source['chunk_id']}"
+                ):
+
+                    st.write(
+                        source["text"]
+                    )
 
     except Exception as error:
 

@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 from google import genai
 
 
+# --------------------------------------------------
+# CONFIGURATION
+# --------------------------------------------------
+
 # Load variables from .env
 load_dotenv()
 
@@ -30,6 +34,40 @@ client = genai.Client(
 # Gemini model
 MODEL_NAME = "gemini-2.5-flash"
 
+
+# --------------------------------------------------
+# DOCUMENT SUMMARIZATION
+# --------------------------------------------------
+
+def summarize_document(text):
+
+    prompt = f"""
+You are an enterprise document summarization assistant.
+
+Summarize the following document using ONLY the
+information provided.
+
+Rules:
+1. Do not add information that is not in the document.
+2. Keep the summary concise.
+3. Highlight the main policies, rules, and important points.
+4. Use clear bullet points where appropriate.
+
+Document:
+{text}
+"""
+
+    response = client.models.generate_content(
+        model=MODEL_NAME,
+        contents=prompt
+    )
+
+    return response.text
+
+
+# --------------------------------------------------
+# QUESTION ANSWERING
+# --------------------------------------------------
 
 def generate_answer(question, retrieved_chunks):
 
