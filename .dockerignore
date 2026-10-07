@@ -1,0 +1,9 @@
+venv/
+.git/
+.github/
+.env
+__pycache__/
+*.pyc
+chroma_db/
+data/documents/
+.streamlit/

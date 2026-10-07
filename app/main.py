@@ -1,12 +1,19 @@
 import streamlit as st
 from pathlib import Path
 import requests
+import os
 
 from services.parser import parse_document
 from services.chunker import chunk_document
 from services.embedder import embed_chunks
 from services.vector_store import store_chunks, get_collection_count
 from services.api_client import ask_question
+
+
+API_URL = os.getenv(
+    "API_URL",
+    "http://127.0.0.1:8000"
+)
 
 
 DOCUMENT_FOLDER = Path("data/documents")
@@ -173,7 +180,7 @@ if uploaded_file is not None:
             try:
 
                 response = requests.post(
-                    "http://127.0.0.1:8000/summarize",
+                    f"{API_URL}/summarize",
                     json={
                         "text": text
                     }
