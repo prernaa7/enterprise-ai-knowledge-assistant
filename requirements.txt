@@ -11,5 +11,5 @@ chromadb
 langchain-huggingface
 sentence-transformers
 torch==2.7.1+cpu
-langchain-text-splitters
 torchvision==0.22.1+cpu
+langchain-text-splitters

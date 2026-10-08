@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./chroma_db:/app/chroma_db
+      - chroma_data:/app/chroma_db
       - ./data/documents:/app/data/documents
     ports:
       - "8000:8000"
@@ -20,8 +20,11 @@ services:
       API_URL: http://api:8000
     volumes:
       - ./data/documents:/app/data/documents
-      - ./chroma_db:/app/chroma_db
+      - chroma_data:/app/chroma_db
     ports:
       - "8501:8501"
     depends_on:
       - api
+
+volumes:
+  chroma_data:
